@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartRFID — Attendance System</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+
+  <!-- ===================== BACKGROUND CANVAS ===================== -->
+  <canvas id="bgCanvas"></canvas>
+
+  <!-- ===================== TOAST CONTAINER ===================== -->
+  <div id="toastContainer"></div>
+
+  <!-- ===================== LOADING OVERLAY ===================== -->
+  <div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="loader-ring"></div>
+    <p id="loadingText">Processing...</p>
+  </div>
+
+  <!-- ================================================================
+       SCREEN 1: SPLIT LANDING PAGE
+  ================================================================ -->
+  <div id="screen-landing" class="screen active">
+    <div class="landing-grid">
+
+      <!-- Left: Teacher -->
+      <div class="landing-panel teacher-panel" id="teacherPanel">
+        <div class="panel-glow teacher-glow"></div>
+        <div class="panel-content">
+          <div class="panel-icon teacher-icon">
+            <i class="fa-solid fa-chalkboard-user"></i>
+          </div>
+          <span class="panel-badge">Educator</span>
+          <h2>Teacher Portal</h2>
+          <p>Manage batches, generate attendance codes, and track student presence in real-time.</p>
+          <ul class="feature-list">
+            <li><i class="fa-solid fa-check-circle"></i> Create & manage batches</li>
+            <li><i class="fa-solid fa-check-circle"></i> Generate secure codes</li>
+            <li><i class="fa-solid fa-check-circle"></i> Full attendance analytics</li>
+          </ul>
+          <button class="btn-primary teacher-btn" onclick="App.goTo('screen-teacher-login')">
+            Continue as Teacher
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="landing-divider">
+        <div class="divider-line"></div>
+        <div class="divider-badge">
+          <span>OR</span>
+        </div>
+        <div class="divider-line"></div>
+      </div>
+
+      <!-- Right: Student -->
+      <div class="landing-panel student-panel" id="studentPanel">
+        <div class="panel-glow student-glow"></div>
+        <div class="panel-content">
+          <div class="panel-icon student-icon">
+            <i class="fa-solid fa-user-graduate"></i>
+          </div>
+          <span class="panel-badge student-badge">Learner</span>
+          <h2>Student Portal</h2>
+          <p>Mark your attendance quickly using your RFID tag and the code shared by your teacher.</p>
+          <ul class="feature-list">
+            <li><i class="fa-solid fa-check-circle"></i> RFID-based marking</li>
+            <li><i class="fa-solid fa-check-circle"></i> Instant confirmation</li>
+            <li><i class="fa-solid fa-check-circle"></i> Attendance history</li>
+          </ul>
+          <button class="btn-primary student-btn" onclick="App.goTo('screen-student-login')">
+            Continue as Student
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Brand -->
+    <div class="landing-brand">
+      <i class="fa-solid fa-wifi"></i>
+      <span>SmartRFID</span>
+      <span class="brand-dot">●</span>
+      <span class="brand-sub">Attendance System</span>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       SCREEN 2: TEACHER LOGIN
+  ================================================================ -->
+  <div id="screen-teacher-login" class="screen">
+    <div class="auth-container">
+      <button class="back-btn" onclick="App.goTo('screen-landing')">
+        <i class="fa-solid fa-chevron-left"></i> Back
+      </button>
+
+      <div class="auth-card teacher-card-theme">
+        <div class="auth-header">
+          <div class="auth-icon teacher-icon">
+            <i class="fa-solid fa-chalkboard-user"></i>
+          </div>
+          <h2>Teacher Login</h2>
+          <p>Welcome back, Educator</p>
+        </div>
+
+        <div class="form-group">
+          <label>Full Name</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-user"></i>
+            <input type="text" id="teacherName" placeholder="Dr. Ananya Sharma" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Mode</label>
+          <div class="toggle-group">
+            <button class="toggle-btn active" id="btnNewTeacher" onclick="App.setTeacherMode('new')">
+              <i class="fa-solid fa-plus"></i> New Teacher
+            </button>
+            <button class="toggle-btn" id="btnExistingTeacher" onclick="App.setTeacherMode('existing')">
+              <i class="fa-solid fa-rotate-right"></i> Existing
+            </button>
+          </div>
+        </div>
+
+        <!-- New Teacher: batch selector shown after creating -->
+        <div id="existingBatchSelector" class="form-group hidden">
+          <label>Select Batch</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-layer-group"></i>
+            <select id="existingBatchSelect">
+              <option value="">-- Select your batch --</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn-primary teacher-btn full-width" onclick="App.teacherLogin()">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          Proceed
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       SCREEN 3: BATCH CREATION
+  ================================================================ -->
+  <div id="screen-batch-create" class="screen">
+    <div class="auth-container">
+      <button class="back-btn" onclick="App.goTo('screen-teacher-login')">
+        <i class="fa-solid fa-chevron-left"></i> Back
+      </button>
+
+      <div class="auth-card teacher-card-theme">
+        <div class="auth-header">
+          <div class="auth-icon teacher-icon">
+            <i class="fa-solid fa-layer-group"></i>
+          </div>
+          <h2>Create New Batch</h2>
+          <p>Set up your class group</p>
+        </div>
+
+        <div class="form-group">
+          <label>Batch Name</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-tag"></i>
+            <input type="text" id="batchName" placeholder="e.g., CS-A Morning Batch" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Department</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-building-columns"></i>
+            <select id="batchDept">
+              <option value="">-- Select Department --</option>
+              <option>Computer Science & Technology</option>
+              <option>Electrical Engineering</option>
+              <option>Mechanical Engineering</option>
+              <option>Civil Engineering</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Year</label>
+            <div class="input-wrap">
+              <i class="fa-solid fa-calendar"></i>
+              <select id="batchYear">
+                <option value="">Year</option>
+                <option>1st Year</option>
+                <option>2nd Year</option>
+                <option>3rd Year</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Semester</label>
+            <div class="input-wrap">
+              <i class="fa-solid fa-list-ol"></i>
+              <select id="batchSem">
+                <option value="">Sem</option>
+                <option>Sem 1</option>
+                <option>Sem 2</option>
+                <option>Sem 3</option>
+                <option>Sem 4</option>
+                <option>Sem 5</option>
+                <option>Sem 6</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-primary teacher-btn full-width" onclick="App.createBatch()">
+          <i class="fa-solid fa-plus-circle"></i>
+          Create Batch & Continue
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       SCREEN 4: TEACHER DASHBOARD
+  ================================================================ -->
+  <div id="screen-teacher-dashboard" class="screen">
+    <!-- Top Nav -->
+    <nav class="dash-nav">
+      <div class="nav-brand">
+        <i class="fa-solid fa-wifi"></i>
+        <span>SmartRFID</span>
+      </div>
+      <div class="nav-center">
+        <button class="nav-tab active" id="tab-overview" onclick="App.switchTab('overview')">
+          <i class="fa-solid fa-gauge-high"></i> Overview
+        </button>
+        <button class="nav-tab" id="tab-attendance" onclick="App.switchTab('attendance')">
+          <i class="fa-solid fa-clipboard-list"></i> Attendance
+        </button>
+      </div>
+      <div class="nav-right">
+        <span id="teacherNavName" class="nav-teacher-name"></span>
+        <button class="nav-logout" onclick="App.logout()">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Dashboard Content -->
+    <div class="dash-body">
+
+      <!-- TAB: OVERVIEW -->
+      <div id="tab-content-overview" class="tab-content active">
+
+        <!-- Welcome Row -->
+        <div class="welcome-row">
+          <div>
+            <h1 id="dashWelcome">Good morning, Teacher 👋</h1>
+            <p id="dashDateLine">Today is a great day to teach.</p>
+          </div>
+          <div class="dash-stats-mini">
+            <div class="stat-chip">
+              <span id="statTotalStudents">0</span>
+              <label>Students</label>
+            </div>
+            <div class="stat-chip">
+              <span id="statTodayPresent">0</span>
+              <label>Present Today</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Batch Selector -->
+        <div class="section-card batch-selector-card">
+          <div class="section-header">
+            <h3><i class="fa-solid fa-layer-group"></i> Active Batch</h3>
+            <button class="btn-ghost" onclick="App.showBatchSwitcher()">
+              <i class="fa-solid fa-exchange-alt"></i> Switch
+            </button>
+          </div>
+          <div class="batch-info-display" id="batchInfoDisplay">
+            <div class="batch-info-name" id="activeBatchName">—</div>
+            <div class="batch-info-meta" id="activeBatchMeta">—</div>
+          </div>
+
+          <!-- Batch Search Dropdown -->
+          <div id="batchSwitcher" class="batch-switcher hidden">
+            <input type="text" id="batchSearchInput" placeholder="Search batches..." oninput="App.filterBatches()" />
+            <div id="batchSearchResults" class="batch-search-results"></div>
+          </div>
+        </div>
+
+        <!-- Attendance Code Card -->
+        <div class="section-card code-card">
+          <div class="section-header">
+            <h3><i class="fa-solid fa-key"></i> Attendance Code</h3>
+            <span class="section-badge" id="codeStatusBadge">Inactive</span>
+          </div>
+
+          <div id="codeDisplayArea" class="code-display-area">
+            <div class="code-placeholder">
+              <i class="fa-regular fa-clock"></i>
+              <span>No active code. Generate one below.</span>
+            </div>
+          </div>
+
+          <div class="code-actions">
+            <button class="btn-primary teacher-btn" id="btnGenerateCode" onclick="App.generateCode()">
+              <i class="fa-solid fa-bolt"></i>
+              Generate Code
+            </button>
+            <button class="btn-secondary" id="btnRegenCode" onclick="App.regenerateCode()" style="display:none">
+              <i class="fa-solid fa-rotate"></i>
+              Regenerate
+            </button>
+            <button class="btn-secondary" id="btnShareCode" onclick="App.openShareModal()" style="display:none">
+              <i class="fa-solid fa-share-nodes"></i>
+              Share
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /tab-overview -->
+
+      <!-- TAB: ATTENDANCE -->
+      <div id="tab-content-attendance" class="tab-content">
+
+        <div class="attendance-header-row">
+          <h2><i class="fa-solid fa-clipboard-list"></i> Attendance Records</h2>
+          <div class="attendance-filters">
+            <div class="input-wrap small">
+              <i class="fa-solid fa-calendar-day"></i>
+              <input type="date" id="filterDate" onchange="App.renderAttendanceTable()" />
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card">
+          <table class="att-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Student Name</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Batch</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceTableBody">
+              <tr class="empty-row">
+                <td colspan="6">
+                  <i class="fa-regular fa-folder-open"></i>
+                  <span>No records yet. Waiting for students...</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div><!-- /tab-attendance -->
+
+    </div><!-- /dash-body -->
+  </div>
+
+  <!-- ================================================================
+       SCREEN 5: STUDENT LOGIN
+  ================================================================ -->
+  <div id="screen-student-login" class="screen">
+    <div class="auth-container">
+      <button class="back-btn" onclick="App.goTo('screen-landing')">
+        <i class="fa-solid fa-chevron-left"></i> Back
+      </button>
+
+      <div class="auth-card student-card-theme">
+        <div class="auth-header">
+          <div class="auth-icon student-icon">
+            <i class="fa-solid fa-user-graduate"></i>
+          </div>
+          <h2>Student Login</h2>
+          <p>Mark your attendance today</p>
+        </div>
+
+        <div class="form-group">
+          <label>Full Name</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-user"></i>
+            <input type="text" id="studentName" placeholder="Rohit Kumar" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" id="studentPassword" placeholder="••••••••" />
+            <button class="pwd-toggle" onclick="App.togglePwd('studentPassword', this)">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Attendance Code <span class="label-hint">(from teacher)</span></label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-key"></i>
+            <input type="text" id="attendanceCode" placeholder="e.g. X7K92P" maxlength="6"
+              oninput="this.value = this.value.toUpperCase()" />
+          </div>
+        </div>
+
+        <button class="btn-primary student-btn full-width" onclick="App.studentLogin()">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          Login & Continue
+        </button>
+
+        <p class="auth-footer-note">
+          First time? Enter your details to auto-register.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       SCREEN 6: RFID SCAN
+  ================================================================ -->
+  <div id="screen-rfid-scan" class="screen">
+    <div class="rfid-container">
+
+      <div class="rfid-card">
+        <div class="rfid-header">
+          <button class="back-btn inline" onclick="App.goTo('screen-student-login')">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <h2>RFID Scan</h2>
+          <div style="width:40px"></div>
+        </div>
+
+        <div class="rfid-illustration">
+          <div class="rfid-rings">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+          </div>
+          <div class="rfid-card-icon">
+            <i class="fa-solid fa-id-card"></i>
+          </div>
+        </div>
+
+        <div class="rfid-message">
+          <p id="rfidInstruction">👉 Please scan your RFID tag on the sensor</p>
+          <p id="rfidStudentGreet" class="rfid-student-greet"></p>
+        </div>
+
+        <button class="btn-primary student-btn rfid-scan-btn" id="btnScanNow" onclick="App.simulateScan()">
+          <i class="fa-solid fa-rss"></i>
+          Scan Now
+        </button>
+
+        <div class="rfid-hint">
+          <i class="fa-solid fa-circle-info"></i>
+          Hold your RFID card near the reader or click the button to simulate.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================================================================
+       SCREEN 7: CONFIRMATION
+  ================================================================ -->
+  <div id="screen-confirmation" class="screen">
+    <div class="confirm-container">
+
+      <div class="confirm-card">
+        <!-- Success Animation -->
+        <div class="confirm-success-anim">
+          <div class="success-circle">
+            <svg viewBox="0 0 52 52" class="checkmark-svg">
+              <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" />
+              <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+            </svg>
+          </div>
+          <div class="success-particles" id="successParticles"></div>
+        </div>
+
+        <div class="confirm-status-badge">
+          <i class="fa-solid fa-circle-check"></i> Present
+        </div>
+
+        <h2>Attendance Marked!</h2>
+
+        <div class="confirm-details">
+          <div class="confirm-row">
+            <span class="confirm-label"><i class="fa-solid fa-user"></i> Student</span>
+            <span class="confirm-value" id="confirmStudentName">—</span>
+          </div>
+          <div class="confirm-row">
+            <span class="confirm-label"><i class="fa-solid fa-layer-group"></i> Batch</span>
+            <span class="confirm-value" id="confirmBatch">—</span>
+          </div>
+          <div class="confirm-row">
+            <span class="confirm-label"><i class="fa-solid fa-calendar-day"></i> Date</span>
+            <span class="confirm-value" id="confirmDate">—</span>
+          </div>
+          <div class="confirm-row">
+            <span class="confirm-label"><i class="fa-solid fa-clock"></i> Time</span>
+            <span class="confirm-value" id="confirmTime">—</span>
+          </div>
+          <div class="confirm-row">
+            <span class="confirm-label"><i class="fa-solid fa-id-card-clip"></i> RFID</span>
+            <span class="confirm-value" id="confirmRFID">—</span>
+          </div>
+        </div>
+
+        <button class="btn-primary student-btn full-width" onclick="App.goTo('screen-landing')">
+          <i class="fa-solid fa-house"></i> Back to Home
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================================================================
+       SHARE MODAL
+  ================================================================ -->
+  <div id="shareModal" class="modal-overlay hidden" onclick="App.closeModal('shareModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-share-nodes"></i> Share Attendance Code</h3>
+        <button class="modal-close" onclick="App.closeModal('shareModal')">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="share-code-display">
+        <span id="shareCodeValue">——</span>
+        <p>Share this code with your students</p>
+      </div>
+
+      <div class="share-options">
+        <button class="share-btn whatsapp" onclick="App.shareVia('whatsapp')">
+          <i class="fa-brands fa-whatsapp"></i>
+          <span>WhatsApp</span>
+        </button>
+        <button class="share-btn facebook" onclick="App.shareVia('facebook')">
+          <i class="fa-brands fa-facebook-f"></i>
+          <span>Facebook</span>
+        </button>
+        <button class="share-btn instagram" onclick="App.shareVia('instagram')">
+          <i class="fa-brands fa-instagram"></i>
+          <span>Instagram</span>
+        </button>
+        <button class="share-btn copylink" onclick="App.copyCode()">
+          <i class="fa-solid fa-copy"></i>
+          <span>Copy Code</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       BATCH MODAL (for teacher to add more batches)
+  ================================================================ -->
+  <div id="batchModal" class="modal-overlay hidden" onclick="App.closeModal('batchModal')">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-plus-circle"></i> Add New Batch</h3>
+        <button class="modal-close" onclick="App.closeModal('batchModal')">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="form-group">
+        <label>Batch Name</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-tag"></i>
+          <input type="text" id="modalBatchName" placeholder="e.g., CS-B Evening Batch" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Department</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-building-columns"></i>
+          <select id="modalBatchDept">
+            <option value="">-- Department --</option>
+            <option>Computer Science & Technology</option>
+            <option>Electrical Engineering</option>
+            <option>Mechanical Engineering</option>
+            <option>Civil Engineering</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Year</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-calendar"></i>
+            <select id="modalBatchYear">
+              <option value="">Year</option>
+              <option>1st Year</option><option>2nd Year</option>
+              <option>3rd Year</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Semester</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-list-ol"></i>
+            <select id="modalBatchSem">
+              <option value="">Sem</option>
+              <option>Sem 1</option><option>Sem 2</option>
+              <option>Sem 3</option><option>Sem 4</option>
+                <option>Sem 5</option><option>Sem 6</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <button class="btn-primary teacher-btn full-width" onclick="App.addBatchFromModal()">
+        <i class="fa-solid fa-plus"></i> Create Batch
+      </button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
