@@ -114,7 +114,7 @@
           <label>Full Name</label>
           <div class="input-wrap">
             <i class="fa-solid fa-user"></i>
-            <input type="text" id="teacherName" placeholder="Dr. Ananya Sharma" autocomplete="off" />
+            <input type="text" id="teacherName" placeholder="Dwijendra Nath Biswas" autocomplete="off" />
           </div>
         </div>
 
@@ -262,7 +262,7 @@
         <!-- Welcome Row -->
         <div class="welcome-row">
           <div>
-            <h1 id="dashWelcome">Good morning, Teacher 👋</h1>
+            <h1 id="dashWelcome">Good morning, Teacher</h1>
             <p id="dashDateLine">Today is a great day to teach.</p>
           </div>
           <div class="dash-stats-mini">
@@ -316,6 +316,12 @@
               <i class="fa-solid fa-bolt"></i>
               Generate Code
             </button>
+            <select id="codeDurationSelect" class="btn-primary teacher-btn">
+              <option style="color:black;" value="5">5 min</option>
+              <option style="color:black;" value="10" selected>10 min</option>
+              <option style="color:black;" value="15">15 min</option>
+              <option style="color:black;" value="30">30 min</option>
+            </select>
             <button class="btn-secondary" id="btnRegenCode" onclick="App.regenerateCode()" style="display:none">
               <i class="fa-solid fa-rotate"></i>
               Regenerate
@@ -392,7 +398,7 @@
           <label>Full Name</label>
           <div class="input-wrap">
             <i class="fa-solid fa-user"></i>
-            <input type="text" id="studentName" placeholder="Rohit Kumar" />
+            <input type="text" id="studentName" placeholder="Adolf Hitler" />
           </div>
         </div>
 
@@ -455,7 +461,7 @@
         </div>
 
         <div class="rfid-message">
-          <p id="rfidInstruction">👉 Please scan your RFID tag on the sensor</p>
+          <p id="rfidInstruction"> Please scan your RFID tag on the sensor</p>
           <p id="rfidStudentGreet" class="rfid-student-greet"></p>
         </div>
 

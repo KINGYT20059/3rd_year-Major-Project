@@ -233,7 +233,7 @@ const App = {
   _loadDashboard() {
     document.getElementById('teacherNavName').textContent = State.currentTeacher.name;
     const greeting = Utils.greeting();
-    document.getElementById('dashWelcome').textContent = `${greeting}, ${State.currentTeacher.name} ðŸ‘‹`;
+    document.getElementById('dashWelcome').textContent = `${greeting}, ${State.currentTeacher.name}`;
     document.getElementById('dashDateLine').textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
     this._updateBatchDisplay();
     this._updateStats();
@@ -247,7 +247,7 @@ const App = {
     if (!State.currentBatch) return;
     document.getElementById('activeBatchName').textContent = State.currentBatch.name;
     document.getElementById('activeBatchMeta').textContent =
-      `${State.currentBatch.dept} â€¢ ${State.currentBatch.year} â€¢ ${State.currentBatch.sem}`;
+      `${State.currentBatch.dept} - ${State.currentBatch.year} - ${State.currentBatch.sem}`;
   },
 
   _updateStats() {
@@ -295,7 +295,7 @@ const App = {
     batches.forEach(b => {
       const div = document.createElement('div');
       div.className = 'batch-result-item' + (State.currentBatch?.id === b.id ? ' active-item' : '');
-      div.innerHTML = `<strong>${b.name}</strong> &nbsp;Â·&nbsp; <small>${b.dept} | ${b.year}</small>`;
+      div.innerHTML = `<strong>${b.name}</strong> &nbsp;Â·&nbsp; <small>${b.dept} - ${b.year} - ${b.sem}</small>`;
       div.onclick = () => this._switchBatch(b.id);
       res.appendChild(div);
     });
@@ -338,13 +338,15 @@ const App = {
   _codeInterval: null,
 
   generateCode() {
+    let time=document.getElementById('codeDurationSelect');
     if (!State.currentBatch) { Toast.warn('No active batch.'); return; }
     const code = Utils.codeGen();
-    const expiresAt = Date.now() + 5 * 60 * 60 * 1000; // 5 hours
+    const expiresAt = Date.now() + parseInt(time.value) * 60 * 1000; // Duration in minutes
     const rec = { batchId: State.currentBatch.id, code, expiresAt, createdAt: Date.now() };
     Store.saveCode(rec);
     this._showCode(rec);
     Toast.success('Code generated!');
+    time.style.display = 'none';
   },
 
   regenerateCode() {
@@ -529,7 +531,7 @@ const App = {
       State.currentBatch = batch;
 
       // Go to RFID scan
-      document.getElementById('rfidStudentGreet').textContent = `Hello, ${name} ðŸ‘‹`;
+      document.getElementById('rfidStudentGreet').textContent = `Hello, ${name}`;
       this.goTo('screen-rfid-scan');
     }, 'Verifying...');
   },
@@ -544,7 +546,7 @@ const App = {
 
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Scanning...';
-    instruction.textContent = 'ðŸ“¡ Scanning RFID tag...';
+    instruction.textContent = ' Scanning RFID tag...';
 
     // Simulate scan delay
     setTimeout(() => {
@@ -559,7 +561,7 @@ const App = {
       // Check if already marked today
       if (Store.hasMarkedToday(student.id)) {
         Toast.warn('Attendance already marked today!');
-        instruction.textContent = 'âœ… Already marked today!';
+        instruction.textContent = 'Already marked today!';
         this._resetScanBtn();
         return;
       }
